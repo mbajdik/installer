@@ -1,2 +1,2 @@
-# installer
-A bunch of scripts for installing Arch Linux
+# Arch Linux Installer
+To start installation just run ```bash <(curl -s https://raw.githubusercontent.com/bmhun/installer/main/install.sh)```
