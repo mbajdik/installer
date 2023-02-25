@@ -162,10 +162,10 @@ then
   if [[ $REPLY =~ ^[Yy]$ ]] || [[ $REPLY = "" ]]
   then
     echo "  -> Checking for updates"
-    sudo pacman -Syu --noconfirm
+    pacman -Syu --noconfirm
 
     echo "  -> Installing sudo"
-    sudo pacman -S --noconfirm sudo
+    pacman -S --noconfirm sudo
 
     echo "  -> Enabling sudo for wheel group (need to edit sudoers)"
 
