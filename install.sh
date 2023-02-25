@@ -70,6 +70,8 @@ while [[ $linecount -gt 100 ]]; do
     linecount=$(cat /etc/pacman.d/mirrorlist | wc -l)
 done
 
+echo "==> Mirrorlist is ready"
+
 read -p "==> Do you want to enable parallel downloads? [Y/n] " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]] || [[ $REPLY = "" ]]
@@ -93,7 +95,7 @@ read -p "  -> Do you want to run the post-installation script? [Y/n] " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]] || [[ $REPLY = "" ]]
 then
-  arch-chroot /mnt "bash <(curl -s https://raw.githubusercontent.com/bmhun/installer/main/postinstall.sh)"
+  arch-chroot /mnt bash <(curl -s https://raw.githubusercontent.com/bmhun/installer/main/postinstall.sh)
 else
   arch-chroot /mnt
 fi
