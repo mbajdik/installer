@@ -125,7 +125,7 @@ then
   pacman -Syu --noconfirm
 
   echo "==> Installing needed network_packages"
-  pacman -S efibootmgr grub
+  pacman -S --noconfirm efibootmgr grub
 
   echo "==> Installing grub"
 
