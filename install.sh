@@ -45,23 +45,23 @@ do
 done
 
 if [[ $selection == 1 ]]; then
-  echo "  -> Formatting $root to ext4"
-  mkfs.ext4 $root
+  echo "  -> Formatting $rootpart to ext4"
+  mkfs.ext4 $rootpart
 fi
 
 if [[ $selection == 2 ]]; then
   read -p "  -> Select a label for the btrfs filesystem: " label
-  echo "  -> Formatting $root to btrfs"
-  mkfs.btrfs -L $label $root
+  echo "  -> Formatting $rootpart to btrfs"
+  mkfs.btrfs -L $label $rootpart
 fi
 
 if [[ $selection == 3 ]]; then
-  echo "  -> Formatting $root to xfs"
-  mkfs.xfs $root
+  echo "  -> Formatting $rootpart to xfs"
+  mkfs.xfs $rootpart
 fi
 
 echo "==> Mounting root filesystem"
-mount $root /mnt
+mount $rootpart /mnt
 
 linecount=$(cat /etc/pacman.d/mirrorlist | wc -l)
 echo "==> Waiting for reflector to generate the mirror list"
