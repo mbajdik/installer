@@ -239,8 +239,8 @@ then
   echo "==> Checking for updates"
   pacman -Syu --noconfirm
 
-  echo "==> Installing audio_packages"
-  pacman -S --noconfirm "$network_packages"
+  echo "==> Installing packages"
+  pacman -S --noconfirm $network_packages
 
   echo "==> Enabling services"
 
@@ -365,8 +365,8 @@ then
   echo "==> Checking for updates"
   pacman -Syu --noconfirm
 
-  echo "==> Installing audio_packages"
-  pacman -S --noconfirm "$network_packages"
+  echo "==> Installing packages"
+  pacman -S --noconfirm $graphics_packages
 fi
 
 read -p "Do you want to setup audio (pipewire) [Y/n] " -n 1 -r
@@ -467,7 +467,7 @@ then
   pacman -Syu --noconfirm
 
   echo "==> Installing packages"
-  pacman -S --noconfirm "$audio_packages"
+  pacman -S --noconfirm $audio_packages
 
   echo "==> Enabling session manager (wireplumber, this might give an error but it's normal)"
   systemctl --user --now enable wireplumber
