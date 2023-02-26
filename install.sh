@@ -97,7 +97,7 @@ if [[ $REPLY =~ ^[Yy]$ ]] || [[ $REPLY = "" ]]
 then
   curl -s https://raw.githubusercontent.com/bmhun/installer/main/postinstall.sh >> /mnt/var/post-installation.sh
   chmod +x /mnt/var/post-installation.sh
-  arch-chroot /mnt /mnt/var/post-installation.sh
+  arch-chroot /mnt /var/post-installation.sh
 else
   arch-chroot /mnt
 fi
