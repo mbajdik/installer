@@ -219,7 +219,7 @@ post_install_fstab() {
 
 # Chroot and complete setup
 post_install_chroot() {
-  curl -s https://raw.githubusercontent.com/bmhun/installer/main/install.sh >> /mnt/var/post_installation.sh
+  curl -s https://raw.githubusercontent.com/bmhun/installer/main/postinstall.sh >> /mnt/var/post_installation.sh
   chmod +x /mnt/var/post_installation.sh
   arch-chroot /mnt /var/post_installation.sh
 }
