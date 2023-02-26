@@ -181,13 +181,13 @@ install_modify_disks() {
   umount -l "$part_root"
   if [[ $part_root_fstype -eq 1 ]]; then
     echo "Formatting root partition to ext4"
-    mkfs.ext4 "$part_esp"
+    mkfs.ext4 "$part_root"
   elif [[ $part_root_fstype -eq 2 ]]; then
     echo "Formatting root partition to btrfs"
-    mkfs.btrfs -L "$part_root_btrfs_label" "$part_esp"
+    mkfs.btrfs -L "$part_root_btrfs_label" "$part_root"
   else
     echo "Formatting root partition to xfs"
-    mkfs.xfs "$part_esp"
+    mkfs.xfs "$part_root"
   fi
 }
 
