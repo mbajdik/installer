@@ -1,103 +1,248 @@
 #!/bin/sh
 
-# Lock it to root execution
-if [[ $(id -u) -ne 0 ]]
-then
-  echo "[ERROR] You need to be root when running this script (run it using sudo)"
-fi
+# Constants
+modtools=("fdisk" "cfdisk")
+rootfs_types=("ext4" "btrfs" "xfs")
+kernel_types=("linux" "linux-lts" "linux-zen")
+number_regex='^[0-9]+$'
 
-has_swap=0
-swap=""
+# Partition variables
+part_esp=""
+part_swap_exists=0
+part_swap=""
+part_root=""
+part_root_fstype=1
+part_root_btrfs_label=""
+part_confirmtext=""
 
-# Disks
-read -p "==> What is the EFI system partition? " esp
+# Kernel variable
+kernel_type=1
+kernel_confirmtext=""
 
-read -p "==> Do you have a swap partition? [Y/n] " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]] || [[ $REPLY = "" ]]
-then
-  has_swap=1
-  read -p "  -> What is the swap partition (empty if none)? " swap
-fi
+# Pacman/pacstrap
+pacman_enable_parallel=0
+pacman_parallel_number=""
+pacman_confirmtext=""
 
-read -p "==> What is the root partition? " rootpart
+# Mirrorlist
+mirrorlist_wait=0
 
-echo "==> Making changes"
+# Introduction
+whiptail --nocancel --title "Arch Linux installer" --msgbox "Welcome to this whiptail based, user-friendly Arch Linux installer!\n\nThis will walk you through all steps of a basic installation" 10 100
 
-echo "  -> Formatting $esp to FAT32"
-mkfs.fat -F 32 $esp
+# Modify disk if user needs it
+disk_modify() {
+    ANSWER=$(whiptail --nocancel --title "Disks" --menu "Do you want to start any disk modification tool to manage your partitions?" 15 60 3 \
+   "1" "No" "2" "fdisk" "3" "cfdisk" 3>&1 1>&2 2>&3)
 
-if [[ $has_swap -eq 1 ]]
-then
-  echo "  -> Making swap on $swap"
-  mkswap $swap
+  if [[ $ANSWER -eq 2 ]] || [[ $ANSWER -eq 3 ]]; then
+    index=1
+    options=()
 
-  echo "  -> Enabling swap"
-  swapon $swap
-fi
+    for i in $(lsblk | grep disk | awk '{print $1};')
+    do
+      options+=("$(echo "$i" | tr -dc "[:alnum:]")")
+      options+=("$(lsblk | grep "$i" | awk '{print $4};')")
+      if [[ index -eq 1 ]]; then
+        options+=("ON")
+      else
+        options+=("")
+      fi
+      index=$((index + 1))
+    done
 
-selection=0
-while ! [[ $selection =~ ^[1-3]$ ]]
-do
-  read -p "  -> Select your file system of choice for root partition (1: ext4, 2: vim, 3: vi): " -n 1 -r
-  echo
-  selection=$REPLY
-done
+    DISK=$(whiptail --nocancel --radiolist "Choose which disk do you want to modify" 20 60 10 \
+     "${options[@]}" 3>&1 1>&2 2>&3)
 
-if [[ $selection == 1 ]]; then
-  echo "  -> Formatting $rootpart to ext4"
-  mkfs.ext4 $rootpart
-fi
+    clear
+    ${modtools[$((ANSWER - 2))]} "/dev/$DISK"
+  fi
+}
 
-if [[ $selection == 2 ]]; then
-  read -p "  -> Select a label for the btrfs filesystem: " label
-  echo "  -> Formatting $rootpart to btrfs"
-  mkfs.btrfs -L $label $rootpart
-fi
+# Collect info about partitions
+disk_selection() {
+  # Get an array of all partitions
+  index=1
+  options=()
+  for i in $(lsblk | grep part | awk '{print $1};')
+  do
+    options+=("$(echo "$i" | tr -dc "[:alnum:]")")
+    options+=("$(lsblk | grep "$i" | awk '{print $4};')")
+    #if [[ index -eq 1 ]]; then
+    #  options+=("ON")
+    #else
+    #  options+=("")
+    #fi
+    #index=$((index + 1))
+  done
 
-if [[ $selection == 3 ]]; then
-  echo "  -> Formatting $rootpart to xfs"
-  mkfs.xfs $rootpart
-fi
+  # Currently only UEFI is supported
+  part_esp="/dev/$(whiptail --nocancel --title "Disks" --menu "Select your EFI system partition" 20 60 10 "${options[@]}" 3>&1 1>&2 2>&3)"
 
-echo "==> Mounting root filesystem"
-mount $rootpart /mnt
+  # If there is, ask for swap
+  whiptail --nocancel --title "Disks" --yesno "Do you have a swap partition?" 20 60
+  if [[ $? -eq 0 ]]; then
+    part_swap_exists=1
+    part_swap="/dev/$(whiptail --nocancel --title "Disks" --menu "Select your swap partition" 20 60 10 "${options[@]}" 3>&1 1>&2 2>&3)"
+  fi
 
-linecount=$(cat /etc/pacman.d/mirrorlist | wc -l)
-echo "==> Waiting for reflector to generate the mirror list"
-while [[ $linecount -gt 100 ]]; do
-    sleep 5
-    linecount=$(cat /etc/pacman.d/mirrorlist | wc -l)
-done
+  # Ask for root
+  part_root="/dev/$(whiptail --nocancel --title "Disks" --menu "Select your root partition" 20 60 10 "${options[@]}" 3>&1 1>&2 2>&3)"
 
-echo "==> Mirrorlist is ready"
+  # Ask for root filesystem type
+  part_root_fstype=$(whiptail --nocancel --title "Disks" --menu "What filesystem should be the root partition formatted to?" 20 60 3 "1" "ext4" "2" "btrfs" "3" "xfs" 3>&1 1>&2 2>&3)
+  if [[ $part_root_fstype -eq 2 ]]; then
+    part_root_btrfs_label=$(whiptail --nocancel --title "Disks" --inputbox "Choose a label for the btrfs root partition" 20 60 3>&1 1>&2 2>&3)
+  fi
 
-read -p "==> Do you want to enable parallel downloads? [Y/n] " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]] || [[ $REPLY = "" ]]
-then
-  read -p "  -> Downloads at once: " download_numbers
+  # Confirm output
+  confirm_text=""
 
-  echo "==> Enabling parallel downloads (backup file is at /etc/pacman.conf.backup)"
-  cp /etc/pacman.conf /etc/pacman.conf.backup
-  sed -i '/ParallelDownloads/s/^#//g' /etc/pacman.conf
-  sed -i "s/ParallelDownloads = .*/ParallelDownloads = $download_numbers/" /etc/pacman.conf
-fi
+  confirm_text="$confirm_text EFI system partition: $part_esp\n"
+  if [[ $part_swap_exists -eq 1 ]]; then confirm_text="$confirm_text Swap partition: $part_swap\n"; fi
+  confirm_text="$confirm_text Root partition: $part_root\n"
+  confirm_text="$confirm_text Root partition filesystem type: ${rootfs_types[$((part_root_fstype - 1))]}\n"
+  if [[ $part_root_fstype -eq 2 ]]; then confirm_text="$confirm_text Btrfs label: $part_root_btrfs_label\n"; fi
 
-echo "==> Running pacstrap (installing default linux kernel)"
-pacstrap -K /mnt base linux linux-firmware
+  whiptail --nocancel --title "Disks" --yesno "Are you okay with these?\n\n$confirm_text" 20 60
+  if ! [[ $? -eq 0 ]]; then
+    disk_selection
+  fi
 
-echo "==> Generating fstab"
-genfstab -U /mnt >> /mnt/etc/fstab
+  part_confirmtext=$confirm_text
+}
 
-echo "==> Chrooting into the new root"
-read -p "  -> Do you want to run the post-installation script? [Y/n] " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]] || [[ $REPLY = "" ]]
-then
-  curl -s https://raw.githubusercontent.com/bmhun/installer/main/postinstall.sh >> /mnt/var/post-installation.sh
-  chmod +x /mnt/var/post-installation.sh
-  arch-chroot /mnt /var/post-installation.sh
-else
-  arch-chroot /mnt
-fi
+# Kernel type selection
+kernel_selection() {
+  kernel_type=$(whiptail --nocancel --title "Kernel" --menu "What type of kernel do you want to install?" 20 60 3 "1" "linux (bleeding-edge)" "2" "linux-lts (more stable)" "3" "linux-zen (gaming optimised)" 3>&1 1>&2 2>&3)
+  kernel_confirmtext="Kernel type: ${kernel_types[$((kernel_type - 1))]}\n"
+}
+
+# Enable parallel downloads
+parallel_download_selection() {
+  whiptail --nocancel --title "Downloads" --yesno "Do you want to enable parallel downloads?" 20 60
+  if [[ $? -eq 0 ]]; then
+    pacman_enable_parallel=1
+    while ! [[ $pacman_parallel_number =~ $number_regex ]]; do
+      pacman_parallel_number=$(whiptail --nocancel --title "Downloads" --inputbox "How many download do you want at once?" 20 60 3>&1 1>&2 2>&3)
+    done
+    pacman_confirmtext="Pacman parallel downloads: on\n Downloads at once: $pacman_parallel_number\n"
+  else
+    pacman_confirmtext="Pacman parallel downloads: off\n"
+  fi
+}
+
+# Check mirrorlist
+mirror_selection() {
+  # Check if reflector has selected mirrors
+  mirrorlist_linecount=$(cat /etc/pacman.d/mirrorlist | wc -l)
+  if [[ $mirrorlist_linecount -gt 100 ]]; then
+    whiptail --nocancel --title "Mirrors" --yesno "Mirrors haven't been selected yet, do you want to generate a list that's not rated by speed? (or just wait for it)" 20 60
+    if [[ $? -eq 0 ]]; then
+      reflector --save /etc/pacman.d/mirrorlist --latest 20 --protocol https
+    else
+      mirrorlist_wait=1
+    fi
+  fi
+}
+
+# Wait for mirrorlist to be generated
+mirror_wait() {
+  if [[ $mirrorlist_wait -eq 1 ]]; then
+    clear
+    echo "Waiting for reflector to generate the pacman mirror list"
+
+    mirrorlist_linecount=$(cat /etc/pacman.d/mirrorlist | wc -l)
+    while [[ $mirrorlist_linecount -gt 100 ]]; do
+        sleep 5
+        mirrorlist_linecount=$(cat /etc/pacman.d/mirrorlist | wc -l)
+    done
+  fi
+}
+
+# Final point to ask
+installation_ready() {
+  whiptail --nocancel --title "Arch Linux installer" --msgbox "Ready to install! Press return if you want to begin the installation process!\n\nCheck if everything is okay:\n$part_confirmtext $kernel_confirmtext $pacman_confirmtext" 20 100
+}
+
+# Apply changes on the disks
+install_modify_disks() {
+  echo "Formatting EFI system partition"
+  mkfs.fat -F 32 "$part_esp"
+
+  if [[ $part_swap_exists -eq 1 ]]; then
+    echo "Making swap"
+    mkswap "$part_swap"
+
+    echo "Enabling swap"
+    swapon "$part_swap"
+  fi
+
+  umount -l "$part_root"
+  if [[ $part_root_fstype -eq 1 ]]; then
+    echo "Formatting root partition to ext4"
+    mkfs.ext4 "$part_esp"
+  elif [[ $part_root_fstype -eq 2 ]]; then
+    echo "Formatting root partition to btrfs"
+    mkfs.btrfs -L "$part_root_btrfs_label" "$part_esp"
+  else
+    echo "Formatting root partition to xfs"
+    mkfs.xfs "$part_esp"
+  fi
+}
+
+# Mounting root
+install_mount_root() {
+  echo "Mounting root"
+  mount "$part_root" /mnt
+}
+
+# Enabling parallel downloads
+install_enable_parallel() {
+  if [[ $pacman_enable_parallel -eq 1 ]]; then
+    echo "Enabling parallel downloads"
+    sed -i '/ParallelDownloads/s/^#//g' /etc/pacman.conf
+    sed -i "s/ParallelDownloads = .*/ParallelDownloads = $pacman_parallel_number/" /etc/pacman.conf
+  fi
+}
+
+# Install linux
+install_linux() {
+  echo "Starting installation"
+  pacstrap -K /mnt base "${kernel_types[$((kernel_type - 1))]}" linux-firmware
+}
+
+# Generate fstab
+post_install_fstab() {
+  genfstab -U /mnt >> /mnt/etc/fstab
+}
+
+# Chroot and complete setup
+post_install_chroot() {
+  curl -s https://raw.githubusercontent.com/bmhun/installer/main/install.sh >> /mnt/var/post_installation.sh
+  chmod +x /mnt/var/post_installation.sh
+  arch-chroot /mnt /var/post_installation.sh
+}
+
+# Collecting information
+disk_modify
+disk_selection
+kernel_selection
+parallel_download_selection
+mirror_selection
+
+# Waiting for installation to be possible
+mirror_wait
+installation_ready
+
+# Pre install stuff
+install_modify_disks
+install_mount_root
+install_enable_parallel
+
+# The long awaited installation
+install_linux
+
+# Post installation stuff
+post_install_fstab
+post_install_chroot
