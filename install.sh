@@ -32,7 +32,7 @@ whiptail --nocancel --title "Arch Linux installer" --msgbox "Welcome to this whi
 
 # Modify disk if user needs it
 disk_modify() {
-    ANSWER=$(whiptail --nocancel --title "Disks" --menu "Do you want to start any disk modification tool to manage your partitions?" 15 60 3 \
+  ANSWER=$(whiptail --nocancel --title "Disks" --menu "Do you want to start any disk modification tool to manage your partitions?" 15 60 3 \
    "1" "No" "2" "fdisk" "3" "cfdisk" 3>&1 1>&2 2>&3)
 
   if [[ $ANSWER -eq 2 ]] || [[ $ANSWER -eq 3 ]]; then
@@ -62,25 +62,18 @@ disk_modify() {
 # Collect info about partitions
 disk_selection() {
   # Get an array of all partitions
-  index=1
   options=()
   for i in $(lsblk | grep part | awk '{print $1};')
   do
     options+=("$(echo "$i" | tr -dc "[:alnum:]")")
     options+=("$(lsblk | grep "$i" | awk '{print $4};')")
-    #if [[ index -eq 1 ]]; then
-    #  options+=("ON")
-    #else
-    #  options+=("")
-    #fi
-    #index=$((index + 1))
   done
 
   # Currently only UEFI is supported
   part_esp="/dev/$(whiptail --nocancel --title "Disks" --menu "Select your EFI system partition" 20 60 10 "${options[@]}" 3>&1 1>&2 2>&3)"
 
   # If there is, ask for swap
-  whiptail --nocancel --title "Disks" --yesno "Do you have a swap partition?" 20 60
+  whiptail --nocancel --title "Disks" --yesno "Do you have a swap partition?" 10 60
   if [[ $? -eq 0 ]]; then
     part_swap_exists=1
     part_swap="/dev/$(whiptail --nocancel --title "Disks" --menu "Select your swap partition" 20 60 10 "${options[@]}" 3>&1 1>&2 2>&3)"
@@ -92,7 +85,7 @@ disk_selection() {
   # Ask for root filesystem type
   part_root_fstype=$(whiptail --nocancel --title "Disks" --menu "What filesystem should be the root partition formatted to?" 20 60 3 "1" "ext4" "2" "btrfs" "3" "xfs" 3>&1 1>&2 2>&3)
   if [[ $part_root_fstype -eq 2 ]]; then
-    part_root_btrfs_label=$(whiptail --nocancel --title "Disks" --inputbox "Choose a label for the btrfs root partition" 20 60 3>&1 1>&2 2>&3)
+    part_root_btrfs_label=$(whiptail --nocancel --title "Disks" --inputbox "Choose a label for the btrfs root partition" 10 60 3>&1 1>&2 2>&3)
   fi
 
   # Confirm output
@@ -120,11 +113,11 @@ kernel_selection() {
 
 # Enable parallel downloads
 parallel_download_selection() {
-  whiptail --nocancel --title "Downloads" --yesno "Do you want to enable parallel downloads?" 20 60
+  whiptail --nocancel --title "Downloads" --yesno "Do you want to enable parallel downloads?" 10 60
   if [[ $? -eq 0 ]]; then
     pacman_enable_parallel=1
     while ! [[ $pacman_parallel_number =~ $number_regex ]]; do
-      pacman_parallel_number=$(whiptail --nocancel --title "Downloads" --inputbox "How many download do you want at once?" 20 60 3>&1 1>&2 2>&3)
+      pacman_parallel_number=$(whiptail --nocancel --title "Downloads" --inputbox "How many download do you want at once?" 10 60 3>&1 1>&2 2>&3)
     done
     pacman_confirmtext="Pacman parallel downloads: on\n Downloads at once: $pacman_parallel_number\n"
   else
@@ -137,7 +130,7 @@ mirror_selection() {
   # Check if reflector has selected mirrors
   mirrorlist_linecount=$(cat /etc/pacman.d/mirrorlist | wc -l)
   if [[ $mirrorlist_linecount -gt 100 ]]; then
-    whiptail --nocancel --title "Mirrors" --yesno "Mirrors haven't been selected yet, do you want to generate a list that's not rated by speed? (or just wait for it)" 20 60
+    whiptail --nocancel --title "Mirrors" --yesno "Mirrors haven't been selected yet, do you want to generate a list that's not rated by speed? (or just wait for it)" 10 60
     if [[ $? -eq 0 ]]; then
       reflector --save /etc/pacman.d/mirrorlist --latest 20 --protocol https
     else
