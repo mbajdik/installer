@@ -463,6 +463,7 @@ collect_packages
 setup_packages
 setup_localisation
 setup_bootloader
+setup_user
 setup_networking
 setup_audio
 setup_desktop
