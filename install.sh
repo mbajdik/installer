@@ -12,6 +12,7 @@ part_swap_exists=0
 part_swap=""
 part_root=""
 part_root_fstype=1
+part_root_set_btrfs_label=0
 part_root_btrfs_label=""
 part_confirmtext=""
 
@@ -85,7 +86,11 @@ disk_selection() {
   # Ask for root filesystem type
   part_root_fstype=$(whiptail --nocancel --title "Disks" --menu "What filesystem should be the root partition formatted to?" 20 60 3 "1" "ext4" "2" "btrfs" "3" "xfs" 3>&1 1>&2 2>&3)
   if [[ $part_root_fstype -eq 2 ]]; then
-    part_root_btrfs_label=$(whiptail --nocancel --title "Disks" --inputbox "Choose a label for the btrfs root partition" 10 60 3>&1 1>&2 2>&3)
+    whiptail --nocancel --title "Disks" --yesno "Do you want to set a label for the btrfs partition?" 10 60
+    if [[ $? -eq 0 ]]; then
+      part_root_btrfs_label=$(whiptail --nocancel --title "Disks" --inputbox "Choose a label for the btrfs root partition" 10 60 3>&1 1>&2 2>&3)
+      part_root_set_btrfs_label=1
+    fi
   fi
 
   # Confirm output
@@ -174,13 +179,17 @@ install_modify_disks() {
   umount -l "$part_root"
   if [[ $part_root_fstype -eq 1 ]]; then
     echo "Formatting root partition to ext4"
-    mkfs.ext4 "$part_root"
+    mkfs.ext4 -F "$part_root"
   elif [[ $part_root_fstype -eq 2 ]]; then
     echo "Formatting root partition to btrfs"
-    mkfs.btrfs -L "$part_root_btrfs_label" "$part_root"
+    if [[ $part_root_set_btrfs_label -eq 1 ]]; then
+      mkfs.btrfs -f -L "$part_root_btrfs_label" "$part_root"
+    else
+      mkfs.btrfs -f "$part_root"
+    fi
   else
     echo "Formatting root partition to xfs"
-    mkfs.xfs "$part_root"
+    mkfs.xfs -f "$part_root"
   fi
 }
 
