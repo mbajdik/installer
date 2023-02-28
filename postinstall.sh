@@ -57,6 +57,7 @@ desktop_options=(
   "xfce4" "A lightweight, functional desktop environment" ""
   "xfce4-goodies" "Additional apps for the xfce4 desktop environment" ""
 )
+packages=()
 
 # Localisation variables
 localisation_city_path=""
@@ -67,14 +68,13 @@ localisation_set_keymap=0
 localisation_keymap=""
 
 # Bootloader variables
-boot_packages="grub efibootmgr "
+packages+=("grub" "efibootmgr")
 boot_part_esp=""
 boot_removable=0
 boot_set_id=0
 boot_loader_id=""
 
 # User variables
-user_packages=""
 user_name=""
 user_set_password=0
 user_password=""
@@ -82,22 +82,17 @@ user_set_sudo=0
 user_sudo_mode=1
 
 # Networking variables
-networking_packages="networkmanager dhcpcd "
+packages+=("networkmanager" "dhcpcd")
 networking_hostname=""
 networking_iwd=0
 networking_set_dns=0
 networking_dns=""
 
-# Graphics
-graphics_packages=""
-
 # Audio
-audio_packages=""
 audio_enable_wireplumber=0
 audio_add_group=0
 
 # Desktop
-desktop_packages=""
 desktop_enable_display_manager=0
 desktop_display_manager_service=""
 
@@ -223,7 +218,7 @@ collect_user() {
   if [[ $? -eq 0 ]]; then
     user_set_sudo=1
     user_sudo_mode=$(whiptail --nocancel --title "User" --menu "What sudo mode do you want to use" 10 60 2 "1" "Require user password" "2" "Don't require a password (not recommended)" 3>&1 1>&2 2>&3)
-    user_packages="sudo "
+    packages+=("sudo")
   fi
 }
 
@@ -236,7 +231,7 @@ collect_networking() {
   whiptail --nocancel --title "Networking" --yesno "Do you want support for wireless connections?" 10 60
   if [[ $? -eq 0 ]]; then
     networking_iwd=1
-    networking_packages="${networking_packages}iwd "
+    packages+=("iwd")
   fi
 
   # DNS
@@ -254,17 +249,17 @@ collect_networking() {
 
 # Graphics driver downloads
 collect_graphics() {
-  graphics_packages="$(whiptail --nocancel --title "Graphics" --checklist "Select which graphics drivers should be installed" 20 80 12 "${graphics_driver_options[@]}" 3>&1 1>&2 2>&3 | tr -d '"') "
+  packages+=($(whiptail --nocancel --title "Graphics" --checklist "Select which graphics drivers should be installed" 20 80 12 "${graphics_driver_options[@]}" 3>&1 1>&2 2>&3 | tr -d '"'))
 }
 
 # Audio settings
 collect_audio() {
   selected_server_type=$(whiptail --nocancel --title "Audio" --menu "Which audio server do you want?" 15 60 3 "1" "None" "2" "PulseAudio" "3" "PipeWire (with wireplumber)" 3>&1 1>&2 2>&3)
   if [[ $selected_server_type -eq 2 ]]; then
-    audio_packages="pulseaudio $(whiptail --nocancel --title "Audio" --checklist "Customize your PulseAudio install" 15 60 3 "${pulseaudio_options[@]}" 3>&1 1>&2 2>&3) "
+    packages+=("pulseaudio" $(whiptail --nocancel --title "Audio" --checklist "Customize your PulseAudio install" 15 60 3 "${pulseaudio_options[@]}" 3>&1 1>&2 2>&3 | tr -d '"'))
     audio_add_group=1
   elif [[ $selected_server_type -eq 3 ]]; then
-    audio_packages="pipewire wireplumber $(whiptail --nocancel --title "Audio" --checklist "Customize your PipeWire install" 15 60 5 "${pipewire_options[@]}" 3>&1 1>&2 2>&3) "
+    packages+=("pipewire" "wireplumber" $(whiptail --nocancel --title "Audio" --checklist "Customize your PipeWire install" 15 60 5 "${pipewire_options[@]}" 3>&1 1>&2 2>&3 | tr -d '"'))
     audio_enable_wireplumber=1
   fi
 }
@@ -274,24 +269,24 @@ collect_desktop() {
   whiptail --nocancel --title "Desktop" --yesno "Do you want to install desktop components (only X11)?" 10 60
   if [[ $? -eq 0 ]]; then
     # Install xorg
-    desktop_packages="xorg "
+    packages+=("xorg")
 
     # Display Manager
     selected_display_managers="$(whiptail --nocancel --title "Desktop" --menu "Which display manager do you want to use" 15 70 3 "${display_manager_options[@]}" 3>&1 1>&2 2>&3)"
     if [[ $selected_display_managers -eq 1 ]]; then
-      desktop_packages="$desktop_packages lightdm lightdm-gtk-greeter "
+      packages+=("lightdm" "lightdm-gtk-greeter")
       desktop_display_manager_service="lightdm"
     elif [[ $selected_display_managers -eq 2 ]]; then
-      desktop_packages="$desktop_packages gdm "
+      packages+=("gdm")
       desktop_display_manager_service="gdm"
     elif [[ $selected_display_managers -eq 3 ]]; then
-      desktop_packages="$desktop_packages sddm "
+      packages+=("sddm")
       desktop_display_manager_service="sddm"
     fi
     desktop_enable_display_manager=1
 
     # Desktop
-    desktop_packages="$desktop_packages$(whiptail --nocancel --title "Desktop" --checklist "Select which desktop components should be installed" 28 90 20 "${desktop_options[@]}" 3>&1 1>&2 2>&3 | tr -d '"') "
+    packages+=($(whiptail --nocancel --title "Desktop" --checklist "Select which desktop components should be installed" 28 90 20 "${desktop_options[@]}" 3>&1 1>&2 2>&3 | tr -d '"'))
   fi
 }
 
@@ -308,7 +303,7 @@ collect_packages() {
 
 # Installing packages
 setup_packages() {
-  all_packages="$boot_packages $user_packages $networking_packages $graphics_packages $audio_packages $desktop_packages"
+  all_packages="${packages[@]}"
 
   if [[ $packages_enable_parallel -eq 1 ]]; then
     echo "Enabling parallel downloads"
@@ -392,7 +387,7 @@ setup_user() {
 
   if [[ $user_set_password -eq 1 ]]; then
     echo "Changing password"
-    chpasswd "${user_name}:${user_password}"
+    echo "${user_name}:${user_password}" | chpasswd
   fi
 
   if [[ $user_set_sudo -eq 1 ]]; then
