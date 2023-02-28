@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Constants
 modtools=("fdisk" "cfdisk")
@@ -212,9 +212,27 @@ post_install_fstab() {
 
 # Chroot and complete setup
 post_install_chroot() {
-  curl -s https://raw.githubusercontent.com/bmhun/installer/main/postinstall.sh >> /mnt/var/post_installation.sh
-  chmod +x /mnt/var/post_installation.sh
-  arch-chroot /mnt /var/post_installation.sh
+  whiptail --nocancel --title "Arch Linux installer" --yesno "Do you go through the post-installation setup?" 10 60
+  if [[ $? -eq 0 ]]; then
+    curl -s https://raw.githubusercontent.com/bmhun/installer/main/postinstall.sh >> /mnt/var/post_installation.sh
+    chmod +x /mnt/var/post_installation.sh
+    arch-chroot /mnt /var/post_installation.sh
+  fi
+}
+
+# Ask to reboot
+post_install_action() {
+  operation=$(whiptail --nocancel --title "Arch Linux installer" --menu "What do you want to do now?" 20 60 3 "1" "Nothing (exit chroot)" "2" "Chroot into the new environment" "3" "Reboot" "4" "Reboot" 3>&1 1>&2 2>&3)
+
+  if [[ $operation -eq 2 ]]; then
+    arch-chroot /mnt
+  elif [[ $operation -eq 3 ]]; then
+    umount -l /mnt
+    reboot
+  else
+    umount -l /mnt
+    shutdown now
+  fi
 }
 
 # Collecting information
@@ -239,3 +257,4 @@ install_linux
 # Post installation stuff
 post_install_fstab
 post_install_chroot
+post_install_action
