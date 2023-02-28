@@ -221,7 +221,7 @@ post_install_fstab() {
 
 # Chroot and complete setup
 post_install_chroot() {
-  whiptail --nocancel --title "Arch Linux installer" --yesno "Do you go through the post-installation setup?" 10 60
+  whiptail --nocancel --title "Arch Linux installer" --yesno "Do you want to go through the post-installation setup?" 10 60
   if [[ $? -eq 0 ]]; then
     curl -s https://raw.githubusercontent.com/bmhun/installer/main/postinstall.sh >> /mnt/var/post_installation.sh
     chmod +x /mnt/var/post_installation.sh
