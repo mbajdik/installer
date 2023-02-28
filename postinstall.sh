@@ -1,22 +1,24 @@
-#!/bin/sh
+#!/bin/bash
 
 # Constants
 number_regex='^[0-9]+$'
 sudoers_options=("%wheel ALL=(ALL:ALL) ALL" "%wheel ALL=(ALL:ALL) NOPASSWD: ALL")
 preset_dns_servers=("8.8.8.8 8.8.4.4" "1.1.1.1" "9.9.9.9")
 graphics_driver_options=(
-  "nvidia" "Base package for NVIDIA graphics driver" ""
-  "nvidia-lts" "Install instead of nvidia if you have LTS kernel" ""
-  "lib32-nvidia-utils" "32-bit support with nvidia drivers" ""
-  "nvidia-settings" "Display and GPU settings manager" ""
-  "xf86-video-nouveau" "Open source NVIDIA driver (not good performance)" ""
-  "xf86-video-intel" "2D acceleration (DDX) for Intel GPUs" ""
-  "xf86-video-amdgpu" "2D acceleration (DDX) for AMD Radeon GPUs" ""
-  "mesa" "AMD Radeon and Intel 3D (DRI) support" ""
-  "lib32-mesa" "32-bit AMD Radeon and Intel 3D (DRI) support" ""
-  "vulkan-intel" "Vulkan support for Intel GPUs" ""
-  "vulkan-radeon" "Vulkan support for AMD Radeon GPUs" ""
-  "lib32-vulkan-radeon" "32-bit Vulkan support for AMD Radeon GPUs" ""
+  "nvidia" "NVIDIA drivers for linux" ""
+  "nvidia-lts" "NVIDIA drivers for linux-lts" ""
+  "lib32-nvidia-utils" "NVIDIA drivers utilities (32-bit)" ""
+  "nvidia-settings" "Tool for configuring the NVIDIA graphics driver" ""
+  "xf86-video-nouveau" "Open Source 3D acceleration driver for nVidia cards" ""
+  "xf86-video-fbdev" "X.org framebuffer video driver" ""
+  "xf86-video-intel" "X.org Intel i810/i830/i915/945G/G965+ video drivers" ""
+  "xf86-video-amdgpu" "X.org amdgpu video driver" ""
+  "mesa" "An open-source implementation of the OpenGL specification" ""
+  "lib32-mesa" "An open-source implementation of the OpenGL specification (32-bit)" ""
+  "vulkan-intel" "Intel's Vulkan mesa driver" ""
+  "lib32-vulkan-intel" "Intel's Vulkan mesa driver (32-bit)" ""
+  "vulkan-radeon" "Radeon's Vulkan mesa driver" ""
+  "lib32-vulkan-radeon" "Radeon's Vulkan mesa driver (32-bit)" ""
 )
 pulseaudio_options=(
   "pulseaudio-alsa" "Support for ALSA" ""
@@ -31,9 +33,10 @@ pipewire_options=(
   "pipewire-pulse" "PulseAudio replacement" ""
 )
 display_manager_options=(
-  "1" "LightDM - Lightweight display manager (uses GTK greeter)"
-  "2" "GDM - Gnome's display manager, simple and user friendly"
-  "3" "SDDM - KDE Plasma's Qt based, lightweight display manager"
+  "1" "None"
+  "2" "LightDM - Lightweight display manager (uses GTK greeter)"
+  "3" "GDM - Gnome's display manager, simple and user friendly"
+  "4" "SDDM - KDE Plasma's Qt based, lightweight display manager"
 )
 desktop_options=(
   "budgie" "A minimalistic and elegant desktop environment" ""
@@ -53,6 +56,7 @@ desktop_options=(
   "kde-utilities" "Apps for KDE Plasma - Essential utilities" ""
   "mate" "A fork of the old GNOME 2" ""
   "mate-extra" "Apps for the Mate desktop environment" ""
+  "pantheon" "A very new user friendly desktop environment" ""
   "plasma" "A Qt based, Windows like desktop environment" ""
   "xfce4" "A lightweight, functional desktop environment" ""
   "xfce4-goodies" "Additional apps for the xfce4 desktop environment" ""
@@ -249,7 +253,7 @@ collect_networking() {
 
 # Graphics driver downloads
 collect_graphics() {
-  packages+=($(whiptail --nocancel --title "Graphics" --checklist "Select which graphics drivers should be installed" 20 80 12 "${graphics_driver_options[@]}" 3>&1 1>&2 2>&3 | tr -d '"'))
+  packages+=($(whiptail --nocancel --title "Graphics" --checklist "Select which graphics drivers should be installed" 22 100 14 "${graphics_driver_options[@]}" 3>&1 1>&2 2>&3 | tr -d '"'))
 }
 
 # Audio settings
@@ -273,20 +277,22 @@ collect_desktop() {
 
     # Display Manager
     selected_display_managers="$(whiptail --nocancel --title "Desktop" --menu "Which display manager do you want to use" 15 70 3 "${display_manager_options[@]}" 3>&1 1>&2 2>&3)"
-    if [[ $selected_display_managers -eq 1 ]]; then
+    if [[ $selected_display_managers -eq 2 ]]; then
       packages+=("lightdm" "lightdm-gtk-greeter")
       desktop_display_manager_service="lightdm"
-    elif [[ $selected_display_managers -eq 2 ]]; then
+      desktop_enable_display_manager=1
+    elif [[ $selected_display_managers -eq 3 ]]; then
       packages+=("gdm")
       desktop_display_manager_service="gdm"
-    elif [[ $selected_display_managers -eq 3 ]]; then
+      desktop_enable_display_manager=1
+    elif [[ $selected_display_managers -eq 4 ]]; then
       packages+=("sddm")
       desktop_display_manager_service="sddm"
+      desktop_enable_display_manager=1
     fi
-    desktop_enable_display_manager=1
 
     # Desktop
-    packages+=($(whiptail --nocancel --title "Desktop" --checklist "Select which desktop components should be installed" 28 90 20 "${desktop_options[@]}" 3>&1 1>&2 2>&3 | tr -d '"'))
+    packages+=($(whiptail --nocancel --title "Desktop" --checklist "Select which desktop components should be installed" 30 90 21 "${desktop_options[@]}" 3>&1 1>&2 2>&3 | tr -d '"'))
   fi
 }
 
@@ -464,4 +470,4 @@ setup_audio
 setup_desktop
 
 # End
-whiptail --nocancel --title "Arch Linux installer" --msgbox "The installation is done!\n\nYou can keep making changes to the new installation using chroot" 10 100
+whiptail --nocancel --title "Arch Linux installer" --msgbox "The installation is done!" 10 100
