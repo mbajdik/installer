@@ -258,7 +258,7 @@ collect_graphics() {
 
 # Audio settings
 collect_audio() {
-  selected_server_type=$(whiptail --nocancel --title "Audio" --menu "Which audio server do you want?" 15 60 3 "1" "None" "2" "PulseAudio" "3" "PipeWire (with wireplumber)" 3>&1 1>&2 2>&3)
+  selected_server_type=$(whiptail --nocancel --title "Audio" --menu "Which audio server do you want?" 15 60 4 "1" "None" "2" "PulseAudio" "3" "PipeWire (with wireplumber)" 3>&1 1>&2 2>&3)
   if [[ $selected_server_type -eq 2 ]]; then
     packages+=("pulseaudio" $(whiptail --nocancel --title "Audio" --checklist "Customize your PulseAudio install" 15 60 3 "${pulseaudio_options[@]}" 3>&1 1>&2 2>&3 | tr -d '"'))
     audio_add_group=1
