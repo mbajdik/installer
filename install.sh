@@ -233,7 +233,9 @@ post_install_chroot() {
 post_install_action() {
   operation=$(whiptail --nocancel --title "Arch Linux installer" --menu "What do you want to do now?" 20 60 3 "1" "Nothing (exit chroot)" "2" "Chroot into the new environment" "3" "Reboot" "4" "Reboot" 3>&1 1>&2 2>&3)
 
-  if [[ $operation -eq 2 ]]; then
+  if [[ $operation -eq 1 ]]; then
+    exit 0
+  elif [[ $operation -eq 2 ]]; then
     arch-chroot /mnt
   elif [[ $operation -eq 3 ]]; then
     umount -l /mnt
