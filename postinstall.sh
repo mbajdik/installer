@@ -642,7 +642,6 @@ collect_audio
 collect_desktop
 collect_apps
 collect_packages
-exit 0
 
 # Making changes
 setup_packages
