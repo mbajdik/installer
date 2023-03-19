@@ -61,146 +61,6 @@ desktop_options=(
   "xfce4" "A lightweight, functional desktop environment" ""
   "xfce4-goodies" "Additional apps for the xfce4 desktop environment" ""
 )
-apps_browser_options=(
-  "chromium" "Web browser developed by Google, the open source project behind Google Chrome" ""
-  "dillo" "Small, fast graphical web browser built on FLTK. Uses its own layout engine" ""
-  "eolie" "Simple web browser for GNOME" ""
-  "epiphany" "Browser which uses the WebKitGTK rendering engine, part of gnome" ""
-  "falkon" "Web browser based on QtWebEngine, written in Qt framework" ""
-  "firefox" "Extensible browser from Mozilla based on Gecko with fast rendering" ""
-  "konqueror" "Web browser based on Qt toolkit and Qt WebEngine (or KHTML layout engine), part of kde-network" ""
-  "luakit" "Fast, small, webkit based browser framework extensible by Lua" ""
-  "min" "A fast, minimal browser that protects your privacy. It includes an interface designed to minimize distractions" ""
-  "midori" "Lightweight web browser based on GTK and WebKit" ""
-  "nyxt" " Keyboard-oriented, infinitely extensible browser designed for power users" ""
-  "opera" "Proprietary browser developed by Opera Software" ""
-  "qutebrowser" "A keyboard-driven, vim-like browser based on PyQt5 and QtWebEngine" ""
-  "seamonkey" "Continuation of the Mozilla Internet Suite" ""
-  "vimb" "A Vim-like web browser written in C that is inspired by Pentadactyl and Vimprobable" ""
-  "vivaldi" "An advanced proprietary browser made with the power user in mind" ""
-)
-apps_images_options=(
-  "ephoto" "A light image viewer based on EFL" ""
-  "eog" "Image viewing and cataloging program, which is a part of the GNOME desktop environment" ""
-  "eom" "Simple graphics viewer for the MATE desktop" ""
-  "feh" "Fast, lightweight image viewer that uses imlib2" ""
-  "gpicview" "Simple and fast image viewer for X, which is part of the LXDE desktop" ""
-  "gthumb" "Image viewer and browser for the GNOME desktop" ""
-  "gwenview" "Fast and easy to use image viewer for the KDE desktop" ""
-  "imv" "Lightweight image viewer with support for Wayland and animated GIFs which uses FreeImage" ""
-  "kuickshow" "Fast and convenient image viewer for KDE" ""
-  "lximage-qt" "The LXQt image viewer" ""
-  "qiv" "Very small and fast image viewer based on GTK and imlib2" ""
-  "ristretto" "Fast and lightweight image viewer for the Xfce desktop environment" ""
-  "sxiv" "Simple image viewer based on imlib2 that works well with tiling window managers" ""
-)
-apps_music_options=(
-  "audacious" "Lightweight, advanced audio player focused on audio quality" ""
-  "blanket" "Improve focus and increase your productivity by listening to different sounds" ""
-  "clementine" "A modern music player and library organizer" ""
-  "gnome-music" "Music player and management application" ""
-  "juk" "A jukebox, tagger and music collection manager" ""
-  "lollypop" "A GNOME music player" ""
-  "lxmusic" "A minimalist xmms2-based music player" ""
-  "pantheon-music" "Simple, fast, and good looking music player. The official elementary music player" ""
-  "playerctl" "mpris media player controller and lib for spotify, vlc, audacious, bmp, xmms2, and others"
-  "pragha" "A lightweight two-panel GTK music manager written in C" ""
-  "qmmp" "Qt-based multimedia player with a user interface that is similar to Winamp or XMMS" ""
-  "rhythmbox" "GTK clone of iTunes, used by default in GNOME" ""
-  "spotify-launcher" "Client for spotify's apt repository in Rust for Arch Linux" ""
-  "strawberry" "Fork of Clementine aimed at audio enthusiasts and music collectors. Uses Qt6" ""
-  "vvave" "Tiny Qt music player to keep your favorite songs at hand" ""
-)
-apps_video_options=(
-  "dragon" "Simple video player for KDE based on Phonon. Part of the kde-multimedia group" ""
-  "glide" "Simple and minimalistic media player based on GStreamer and GTK" ""
-  "gnome-mplayer" "Simple GTK-based GUI for MPlayer" ""
-  "kaffeine" "KDE media player" ""
-  "kdenlive" "Non-linear video editor designed for basic to semi-professional work" ""
-  "kodi" "Media player and entertainment hub for digital media" ""
-  "mpv" "A free, open source, and cross-platform media player" ""
-  "pantheon-videos" "Video player and library designed for elementary OS using GStreamer" ""
-  "parole" "Modern media player based on the GStreamer framework" ""
-  "rage" "EFL Video and Music player" ""
-  "snappy-player" "Powerful media player with a minimalistic interface that uses GStreamer" ""
-  "totem" "Media player (audio and video) for the GNOME desktop that uses GStreamer. Part of gnome" ""
-  "tvtime" "High quality television application for use with video capture cards" ""
-  "vlc" "Middleweight video player with support for a wide variety of audio and video formats"
-)
-apps_terminal_options=(
-  "alacritty" "A cross-platform, GPU-accelerated terminal emulator" ""
-  "gnome-console" "A simple user-friendly terminal emulator for the GNOME desktop" ""
-  "gnome-terminal" "The GNOME Terminal Emulator" ""
-  "konsole" "Terminal emulator included in the KDE desktop" ""
-  "kitty" "A modern, hackable, featureful, OpenGL based terminal emulator" ""
-  "lxterminal" "Desktop independent terminal emulator for LXDE" ""
-  "mate-terminal" "A fork of GNOME terminal for the MATE desktop" ""
-  "pantheon-terminal" "The Pantheon Terminal Emulator" ""
-  "qterminal" "Lightweight Qt-based terminal emulator" ""
-  "rxvt-unicode" "Unicode enabled rxvt-clone terminal emulator (urxvt)" ""
-  "terminator" "Terminal emulator supporting multiple resizable terminal panels" ""
-  "xfce4-terminal" "A modern terminal emulator primarily for the Xfce desktop environment" ""
-  "xterm" "X Terminal Emulator" ""
-  "yakuake" "Drop-down terminal (Quake style) emulator based on Konsole" ""
-  "zutty" "A high-end terminal for low-end systems" ""
-)
-apps_files_options=(
-  "caja" "The file manager for the MATE desktop" ""
-  "dolphin" "File manager included in the KDE desktop" ""
-  "nautilus" "Extensible, heavyweight file manager used by default in GNOME with support for custom scripts" ""
-  "konqueror" "File manager and web browser for the KDE desktop" ""
-  "nemo" "Nemo is the file manager of the Cinnamon desktop. A fork of Nautilus" ""
-  "pantheon-files" "File browser designed for elementary OS" ""
-  "pcmanfm" "Very fast and lightweight file manager which can also optionally manage the desktop icons and background" ""
-  "pcmanfm-qt" "Qt port of PCManFM file manager" ""
-  "thunar" "File manager that can be run as a daemon with excellent start up and directory load times" ""
-)
-apps_files_addons_options=(
-  "ark" "Archiving tool included in the KDE desktop" ""
-  "engrampa" "Archive manager for MATE" ""
-  "file-roller" "Archive manager included in the GNOME desktop (can be used with Thunar addon)" ""
-  "gvfs" "Virtual filesystem implementation for GIO (trash, recent activities and mounting filesystems)" ""
-  "lxqt-archiver" "Simple and lightweight desktop-agnostic Qt file archiver" ""
-  "thunar-archive-plugin" "Adds archiving options to Thunar (requires archive manager, like file-roller)" ""
-)
-apps_text_editor_options=(
-  "code" "Editor for building and debugging modern web and cloud applications (Visual Studio Code)" ""
-  "emacs" "The extensible, customizable, self-documenting real-time display editor by GNU" ""
-  "emacs-nox" "Emacs without a GUI" ""
-  "gedit" "GNOME Text Editor (feature rich)" ""
-  "gnome-text-editor" "Simple text editor for GNOME focused on a pleasing default experience" ""
-  "gvim" "Vim with a GUI" ""
-  "kate" "Full-featured programmer's editor for the KDE desktop with MDI and a filesystem browser" ""
-  "leafpad" "Notepad clone for GTK that emphasizes simplicity" ""
-  "libreoffice-fresh" "LibreOffice branch which contains new features and program enhancements" ""
-  "libreoffice-still" "LibreOffice maintenance branch" ""
-  "nano" "Console text editor based on pico with on-screen key bindings help" ""
-  "neovim" "Vim's rebirth for the 21st century" ""
-  "neovim-qt" "Qt GUI for Neovim" ""
-  "notepadqq" "Qt-based, Notepad++-like text editor with support for syntax highlighting for more than 100 languages" ""
-  "pantheon-code" "The Pantheon Text Editor" ""
-  "vim" "Vi Improved, a highly configurable, improved version of the vi text editor" ""
-)
-apps_window_manager_options=(
-  "awesome" "Highly configurable framework window manager" ""
-  "bspwm" "Tiling window manager based on binary space partitioning" ""
-  "i3-wm" "Improved dynamic tiling window manager" ""
-  "openbox" "Highly configurable and lightweight X11 window manager" ""
-  "picom" "X compositor that may fix tearing issues and adds fancy effects and blurring" ""
-  "qtile" "A full-featured, pure-Python tiling window manager" ""
-  "spectrwm" "A minimalistic automatic tiling window manager that tries to stay out of the way" ""
-  "xcompmgr" "Composite Window-effects manager for X.org (very lightweight but it has effects)" ""
-  "xmonad" "Lightweight X11 tiled window manager written in Haskell" ""
-)
-apps_other_options=(
-  "dmenu" "Generic menu for X" ""
-  "dunst" "Customizable and lightweight notification-daemon" ""
-  "htop" "Interactive process viewer" ""
-  "nitrogen" "Background browser and setter for X windows" ""
-  "polybar" "A fast and easy-to-use status bar" ""
-  "rofi" "A window switcher, application launcher and dmenu replacement" ""
-  "slock" "A simple screen locker for X" ""
-)
 packages=()
 
 # Localisation variables
@@ -436,48 +296,6 @@ collect_desktop() {
   fi
 }
 
-# Install needed apps
-collect_apps() {
-  whiptail --nocancel --title "Apps" --yesno "Do you want to install other applications/programs now?" 10 60
-  if [[ $? -eq 0 ]]; then
-    # Browsers
-    packages+=($(whiptail --nocancel --title "Apps" --checklist "Select which browsers should be installed" 30 135 21 "${apps_browser_options[@]}" 3>&1 1>&2 2>&3 | tr -d '"'))
-
-    # Images
-    packages+=($(whiptail --nocancel --title "Apps" --checklist "Select which image browsing apps should be installed" 30 135 21 "${apps_images_options[@]}" 3>&1 1>&2 2>&3 | tr -d '"'))
-
-    # Music
-    packages+=($(whiptail --nocancel --title "Apps" --checklist "Select which music players should be installed" 30 135 21 "${apps_music_options[@]}" 3>&1 1>&2 2>&3 | tr -d '"'))
-
-    # Video
-    packages+=($(whiptail --nocancel --title "Apps" --checklist "Select which video players should be installed" 30 135 21 "${apps_video_options[@]}" 3>&1 1>&2 2>&3 | tr -d '"'))
-
-    # Terminal
-    packages+=($(whiptail --nocancel --title "Apps" --checklist "Select which terminals should be installed" 30 135 21 "${apps_terminal_options[@]}" 3>&1 1>&2 2>&3 | tr -d '"'))
-
-    # Files
-    packages+=($(whiptail --nocancel --title "Apps" --checklist "Select which file managers should be installed" 30 135 21 "${apps_files_options[@]}" 3>&1 1>&2 2>&3 | tr -d '"'))
-
-    # File addons
-    packages+=($(whiptail --nocancel --title "Apps" --checklist "Select which file related packages should be installed" 30 135 21 "${apps_files_addons_options[@]}" 3>&1 1>&2 2>&3 | tr -d '"'))
-
-    # Text editors
-    packages+=($(whiptail --nocancel --title "Apps" --checklist "Select which text editors should be installed" 30 135 21 "${apps_text_editor_options[@]}" 3>&1 1>&2 2>&3 | tr -d '"'))
-
-    # Window managers
-    packages+=($(whiptail --nocancel --title "Apps" --checklist "Select which window managers and compositors should be installed" 30 135 21 "${apps_window_manager_options[@]}" 3>&1 1>&2 2>&3 | tr -d '"'))
-
-    # Other
-    packages+=($(whiptail --nocancel --title "Apps" --checklist "Select which other packages should be installed" 30 135 21 "${apps_other_options[@]}" 3>&1 1>&2 2>&3 | tr -d '"'))
-
-    # Custom stuff
-    whiptail --nocancel --title "Apps" --yesno "Do you want to install more packages?" 10 60
-    if [[ $? -eq 0 ]]; then
-      packages+=($(whiptail --nocancel --title "Apps" --inputbox "Write other packages to be installed here (separated with spaces)" 10 100 3>&1 1>&2 2>&3))
-    fi
-  fi
-}
-
 # Ask the user if they want to enable parallel downloads
 collect_packages() {
   whiptail --nocancel --title "Downloads" --yesno "Do you want to enable parallel downloads?" 10 60
@@ -640,7 +458,6 @@ collect_networking
 collect_graphics
 collect_audio
 collect_desktop
-collect_apps
 collect_packages
 
 # Making changes
