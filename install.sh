@@ -33,31 +33,26 @@ whiptail --nocancel --title "Arch Linux installer" --msgbox "Welcome to this whi
 
 # Modify disk if user needs it
 disk_modify() {
-  ANSWER=$(whiptail --nocancel --title "Disks" --menu "Do you want to start any disk modification tool to manage your partitions?" 15 60 3 \
-   "1" "No" "2" "fdisk" "3" "cfdisk" 3>&1 1>&2 2>&3)
+  diskmod=0
+  while [[ $diskmod -ne 1 ]]; do
+    diskmod=$(whiptail --nocancel --title "Disks" --menu "Do you want to start any disk modification tool to manage your partitions?" 15 60 3 \
+    "1" "No, continue with the installation" "2" "Use fdisk" "3" "Use cfdisk" 3>&1 1>&2 2>&3)
+      if [[ $diskmod -eq 2 ]] || [[ $diskmod -eq 3 ]]; then
+      options=()
 
-  if [[ $ANSWER -eq 2 ]] || [[ $ANSWER -eq 3 ]]; then
-    index=1
-    options=()
+      for i in $(lsblk | grep disk | awk '{print $1};')
+      do
+        options+=("$(echo "$i" | tr -dc "[:alnum:]")")
+        options+=("$(lsblk | grep "$i" | awk '{print $4};')")
+      done
 
-    for i in $(lsblk | grep disk | awk '{print $1};')
-    do
-      options+=("$(echo "$i" | tr -dc "[:alnum:]")")
-      options+=("$(lsblk | grep "$i" | awk '{print $4};')")
-      if [[ index -eq 1 ]]; then
-        options+=("ON")
-      else
-        options+=("")
-      fi
-      index=$((index + 1))
-    done
+      DISK=$(whiptail --nocancel --menu "Choose which disk do you want to modify" 20 60 10 \
+       "${options[@]}" 3>&1 1>&2 2>&3)
 
-    DISK=$(whiptail --nocancel --radiolist "Choose which disk do you want to modify" 20 60 10 \
-     "${options[@]}" 3>&1 1>&2 2>&3)
-
-    clear
-    ${modtools[$((ANSWER - 2))]} "/dev/$DISK"
-  fi
+      clear
+      ${modtools[$((diskmod - 2))]} "/dev/$DISK"
+    fi
+  done
 }
 
 # Collect info about partitions
@@ -101,13 +96,25 @@ disk_selection() {
   confirm_text="$confirm_text Root partition: $part_root\n"
   confirm_text="$confirm_text Root partition filesystem type: ${rootfs_types[$((part_root_fstype - 1))]}\n"
   if [[ $part_root_fstype -eq 2 ]]; then confirm_text="$confirm_text Btrfs label: $part_root_btrfs_label\n"; fi
+  confirm_text="$confirm_text \n"
+  confirm_text="$confirm_text $part_esp will be formatted to FAT32\n"
+  if [[ $part_swap_exists -eq 1 ]]; then confirm_text="$confirm_text $part_swap will be formatted to swap\n"; fi
+  confirm_text="$confirm_text $part_esp will be formatted to ${rootfs_types[$((part_root_fstype - 1))]}\n"
 
   whiptail --nocancel --title "Disks" --yesno "Are you okay with these?\n\n$confirm_text" 20 60
   if ! [[ $? -eq 0 ]]; then
+    part_esp=""
+    part_swap_exists=0
+    part_swap=""
+    part_root=""
+    part_root_fstype=1
+    part_root_set_btrfs_label=0
+    part_root_btrfs_label=""
+    part_confirmtext=""
     disk_selection
+  else
+    part_confirmtext=$confirm_text
   fi
-
-  part_confirmtext=$confirm_text
 }
 
 # Kernel type selection
@@ -127,6 +134,14 @@ parallel_download_selection() {
     pacman_confirmtext="Pacman parallel downloads: on\n Downloads at once: $pacman_parallel_number\n"
   else
     pacman_confirmtext="Pacman parallel downloads: off\n"
+  fi
+}
+
+# Final point to ask
+installation_ready() {
+  whiptail --nocancel --title "Arch Linux installer" --yesno "Ready to install! Press return if you want to begin the installation process!\n\nCheck if everything is okay:\n$part_confirmtext $kernel_confirmtext $pacman_confirmtext" 20 100
+  if [[ $? -eq 1 ]]; then
+    exit 1
   fi
 }
 
@@ -156,11 +171,6 @@ mirror_wait() {
         mirrorlist_linecount=$(cat /etc/pacman.d/mirrorlist | wc -l)
     done
   fi
-}
-
-# Final point to ask
-installation_ready() {
-  whiptail --nocancel --title "Arch Linux installer" --msgbox "Ready to install! Press return if you want to begin the installation process!\n\nCheck if everything is okay:\n$part_confirmtext $kernel_confirmtext $pacman_confirmtext" 20 100
 }
 
 # Apply changes on the disks
@@ -231,7 +241,7 @@ post_install_chroot() {
 
 # Ask to reboot
 post_install_action() {
-  operation=$(whiptail --nocancel --title "Arch Linux installer" --menu "What do you want to do now?" 20 60 4 "1" "Nothing (exit chroot)" "2" "Chroot into the new environment" "3" "Reboot" "4" "Shutdown" 3>&1 1>&2 2>&3)
+  operation=$(whiptail --nocancel --title "Arch Linux installer" --menu "What do you want to do now?" 20 60 5 "1" "Nothing (exit chroot)" "2" "Chroot into the new environment" "3" "Reboot" "4" "Shutdown" "5" "Run the post-installation script" 3>&1 1>&2 2>&3)
 
   if [[ $operation -eq 1 ]]; then
     exit 0
@@ -240,9 +250,13 @@ post_install_action() {
   elif [[ $operation -eq 3 ]]; then
     umount -l /mnt
     reboot
-  else
+  elif [[ $operation -eq 4 ]]; then
     umount -l /mnt
     shutdown now
+  else
+    curl -s https://raw.githubusercontent.com/bmhun/installer/main/postinstall.sh >> /mnt/var/post_installation.sh
+    chmod +x /mnt/var/post_installation.sh
+    arch-chroot /mnt /var/post_installation.sh
   fi
 }
 
@@ -251,11 +265,12 @@ disk_modify
 disk_selection
 kernel_selection
 parallel_download_selection
-mirror_selection
 
-# Waiting for installation to be possible
-mirror_wait
+# Waiting for the installation to be possible
 installation_ready
+mirror_selection
+mirror_wait
+
 
 # Pre install stuff
 install_modify_disks
