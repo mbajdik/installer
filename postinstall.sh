@@ -3,6 +3,7 @@
 # Constants
 number_regex='^[0-9]+$'
 sudoers_options=("%wheel ALL=(ALL:ALL) ALL" "%wheel ALL=(ALL:ALL) NOPASSWD: ALL")
+sudo_options=("Require user password" "Don't require a password (not recommended)")
 preset_dns_servers=("8.8.8.8 8.8.4.4" "1.1.1.1" "9.9.9.9")
 graphics_driver_options=(
   "nvidia" "NVIDIA drivers for linux" ""
@@ -64,7 +65,7 @@ desktop_options=(
 packages=()
 
 # Localisation variables
-localisation_city_path=""
+localisation_city=""
 localisation_selected_locales=()
 localisation_set_lang=0
 localisation_lang=""
@@ -124,7 +125,7 @@ collect_localisation() {
     fi
   done
   selected_city=$(whiptail --nocancel --title "Localisation" --menu "Select the city of your timezone" 20 60 12 "${cities[@]}" 3>&1 1>&2 2>&3)
-  localisation_city_path="/usr/share/zoneinfo/$selected_city"
+  localisation_city="$selected_city"
 
 
   # Locales
@@ -307,6 +308,51 @@ collect_packages() {
   fi
 }
 
+final_question() {
+  confirmation_lines=()
+
+  # localisation
+  confirmation_lines+=(" Localisation city: $localisation_city")
+  confirmation_lines+=(" Selected locales: ${#localisation_selected_locales[@]}")
+  if [[ $localisation_set_lang -eq 1 ]]; then confirmation_lines+=(" Language: $localisation_lang"); fi
+  if [[ $localisation_set_keymap -eq 1 ]]; then confirmation_lines+=(" Keymap: $localisation_keymap"); fi
+
+  # Bootloader
+  confirmation_lines+=(" Bootloader EFI system partition: $boot_part_esp")
+  if [[ $boot_removable -eq 1 ]]; then confirmation_lines+=(" Bootloader on removable device"); fi
+  if [[ $boot_set_id -eq 1 ]]; then confirmation_lines+=(" Bootloader ID: $boot_loader_id"); fi
+
+  # User
+  confirmation_lines+=(" New user's name: $user_name")
+  if [[ $user_set_password -eq 1 ]]; then confirmation_lines+=(" User password: ${#user_password} characters long"); fi
+  if [[ $user_set_sudo -eq 1 ]]; then confirmation_lines+=(" Sudo setup mode: ${sudo_options[$((user_sudo_mode - 1))]}"); fi
+
+  # Network
+  confirmation_lines+=(" New hostname: $networking_hostname")
+  if [[ $networking_iwd -eq 1 ]]; then confirmation_lines+=(" Installing wireless connection support"); fi
+  if [[ $networking_set_dns -eq 1 ]]; then confirmation_lines+=(" DNS servers: $networking_dns"); fi
+
+  # Audio
+  if [[ $audio_enable_wireplumber -eq 1 ]]; then confirmation_lines+=(" Installing PipeWire audio server"); fi
+  if [[ $audio_add_group -eq 1 ]]; then confirmation_lines+=(" Installing PulseAudio audio server"); fi
+
+  # Desktop
+  if [[ $desktop_enable_display_manager -eq 1 ]]; then confirmation_lines+=(" Display manager: $desktop_display_manager_service"); fi
+
+  # Other
+  if [[ $packages_enable_parallel ]]; then confirmation_lines+=(" Parallel downloads: $packages_parallel_downloads"); fi
+
+
+  confirmation_string=""
+  for i in "${confirmation_lines[@]}"; do confirmation_string="$confirmation_string\n$i"; done
+
+
+  whiptail --nocancel --title "Arch Linux installer" --yesno "Ready to install!\n\nCheck if everything is okay:\n$confirmation_string" 20 100
+  if [[ $? -eq 1 ]]; then
+    exit 1
+  fi
+}
+
 # Installing packages
 setup_packages() {
   all_packages="${packages[@]}"
@@ -344,7 +390,7 @@ setup_packages() {
 # Changes: localisation
 setup_localisation() {
   echo "Setting timezone"
-  ln -sf "$localisation_city_path" /etc/localtime
+  ln -sf "/usr/share/zoneinfo/$localisation_city" /etc/localtime
 
   echo "Enabling hardware clock"
   hwclock --systohc
