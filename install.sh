@@ -99,7 +99,7 @@ disk_selection() {
   confirm_text="$confirm_text \n"
   confirm_text="$confirm_text $part_esp will be formatted to FAT32\n"
   if [[ $part_swap_exists -eq 1 ]]; then confirm_text="$confirm_text $part_swap will be formatted to swap\n"; fi
-  confirm_text="$confirm_text $part_esp will be formatted to ${rootfs_types[$((part_root_fstype - 1))]}\n"
+  confirm_text="$confirm_text $part_root will be formatted to ${rootfs_types[$((part_root_fstype - 1))]}\n\n"
 
   whiptail --nocancel --title "Disks" --yesno "Are you okay with these?\n\n$confirm_text" 20 60
   if ! [[ $? -eq 0 ]]; then
@@ -257,6 +257,7 @@ post_install_action() {
     curl -s https://raw.githubusercontent.com/bmhun/installer/main/postinstall.sh >> /mnt/var/post_installation.sh
     chmod +x /mnt/var/post_installation.sh
     arch-chroot /mnt /var/post_installation.sh
+    post_install_action
   fi
 }
 
