@@ -506,6 +506,9 @@ collect_audio
 collect_desktop
 collect_packages
 
+# Exit if something is wrong
+final_question
+
 # Making changes
 setup_packages
 setup_localisation
