@@ -347,7 +347,7 @@ final_question() {
   for i in "${confirmation_lines[@]}"; do confirmation_string="$confirmation_string\n$i"; done
 
 
-  whiptail --nocancel --title "Arch Linux installer" --yesno "Ready to install!\n\nCheck if everything is okay:\n$confirmation_string" 20 100
+  whiptail --nocancel --title "Arch Linux installer" --yesno "Ready to install!\n\nCheck if everything is okay:\n$confirmation_string" 30 100
   if [[ $? -eq 1 ]]; then
     exit 1
   fi
