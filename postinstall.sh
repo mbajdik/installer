@@ -168,16 +168,20 @@ collect_localisation() {
 }
 
 collect_bootloader() {
-  # Get an array of all partitions
-  partitions=()
-  for i in $(lsblk | grep part | awk '{print $1};')
-  do
-    partitions+=("$(echo "$i" | tr -dc "[:alnum:]")")
-    partitions+=("$(lsblk | grep "$i" | awk '{print $4};')")
-  done
+  if [ ! -f "$1" ]; then
+    # Get an array of all partitions
+    partitions=()
+    for i in $(lsblk | grep part | awk '{print $1};')
+    do
+      partitions+=("$(echo "$i" | tr -dc "[:alnum:]")")
+      partitions+=("$(lsblk | grep "$i" | awk '{print $4};')")
+    done
 
-  # Get EFI partition
-  boot_part_esp="/dev/$(whiptail --nocancel --title "Bootloader" --menu "Select your EFI system partition" 20 60 10 "${partitions[@]}" 3>&1 1>&2 2>&3)"
+    # Get EFI partition
+    boot_part_esp="/dev/$(whiptail --nocancel --title "Bootloader" --menu "Select your EFI system partition" 20 60 10 "${partitions[@]}" 3>&1 1>&2 2>&3)"
+  else
+    boot_part_esp="$1"
+  fi
 
   # Whether its removable
   whiptail --nocancel --title "Bootloader" --yesno "Is that partition on a removable device?" 10 60
@@ -416,8 +420,11 @@ setup_localisation() {
 
 # Changes: bootloader
 setup_bootloader() {
-  echo "Mounting EFI system partition"
-  mount --mkdir "$boot_part_esp" /boot/efi
+  # Now in normal installer
+  if ! grep -qs "$boot_part_esp" /proc/mounts; then
+    echo "Mounting EFI system partition"
+    mount --mkdir "$boot_part_esp" /boot/efi
+  fi
 
   # Preparing arguments
   id_option=""
@@ -498,7 +505,7 @@ check_environment
 
 # Collecting information
 collect_localisation
-collect_bootloader
+collect_bootloader "$@"
 collect_user
 collect_networking
 collect_graphics
