@@ -8,6 +8,8 @@ number_regex='^[0-9]+$'
 
 # Partition variables
 part_esp=""
+part_boot_exists=0
+part_boot=""
 part_swap_exists=0
 part_swap=""
 part_root=""
@@ -15,6 +17,8 @@ part_root_fstype=1
 part_root_set_btrfs_label=0
 part_root_btrfs_label=""
 part_confirmtext=""
+part_setup_encryption=0
+part_encryption_passwd=""
 
 # Kernel variable
 kernel_type=1
@@ -37,11 +41,10 @@ disk_modify() {
   while [[ $diskmod -ne 1 ]]; do
     diskmod=$(whiptail --nocancel --title "Disks" --menu "Do you want to start any disk modification tool to manage your partitions?" 15 60 3 \
     "1" "No, continue with the installation" "2" "Use fdisk" "3" "Use cfdisk" 3>&1 1>&2 2>&3)
-      if [[ $diskmod -eq 2 ]] || [[ $diskmod -eq 3 ]]; then
+    if [[ $diskmod -eq 2 ]] || [[ $diskmod -eq 3 ]]; then
       options=()
 
-      for i in $(lsblk | grep disk | awk '{print $1};')
-      do
+      for i in $(lsblk | grep disk | awk '{print $1};'); do
         options+=("$(echo "$i" | tr -dc "[:alnum:]")")
         options+=("$(lsblk | grep "$i" | awk '{print $4};')")
       done
@@ -68,6 +71,13 @@ disk_selection() {
   # Currently only UEFI is supported
   part_esp="/dev/$(whiptail --nocancel --title "Disks" --menu "Select your EFI system partition" 20 60 10 "${options[@]}" 3>&1 1>&2 2>&3)"
 
+  # Boot mount (required for encryption)
+  whiptail --nocancel --title "Disks" --yesno "Do you have a boot partition (mount for /boot; required when encryption is used; at least 500MiB)?" 10 60
+  if [[ $? -eq 0 ]]; then
+    part_boot_exists=1
+    part_boot="/dev/$(whiptail --nocancel --title "Disks" --menu "Select your boot partition (at least 500MiB)" 20 60 10 "${options[@]}" 3>&1 1>&2 2>&3)"
+  fi
+
   # If there is, ask for swap
   whiptail --nocancel --title "Disks" --yesno "Do you have a swap partition?" 10 60
   if [[ $? -eq 0 ]]; then
@@ -88,10 +98,29 @@ disk_selection() {
     fi
   fi
 
+  # If possible, ask for encryption
+  if [[ $part_boot_exists -eq 1 ]]; then
+    whiptail --nocancel --title "Disks" --yesno "Do you want to set up encryption for your root disk?" 10 60
+    if [[ $? -eq 0 ]]; then
+      part_setup_encryption=1
+
+      entered_password=0
+      password_first=""
+      password_second=""
+      while [[ $entered_password -eq 0 ]] || ! [[ "$password_first" == "$password_second" ]]; do
+        password_first=$(whiptail --nocancel --title "Disks" --passwordbox "Enter the password" 10 60 3>&1 1>&2 2>&3)
+        password_second=$(whiptail --nocancel --title "Disks" --passwordbox "Enter the password again" 10 60 3>&1 1>&2 2>&3)
+        entered_password=1
+      done
+      part_encryption_passwd="$password_first"
+    fi
+  fi
+
   # Confirm output
   confirm_text=""
 
   confirm_text="$confirm_text EFI system partition: $part_esp\n"
+  if [[ $part_boot_exists -eq 1 ]]; then confirm_text="$confirm_text Boot partition: $part_boot\n"; fi
   if [[ $part_swap_exists -eq 1 ]]; then confirm_text="$confirm_text Swap partition: $part_swap\n"; fi
   confirm_text="$confirm_text Root partition: $part_root\n"
   confirm_text="$confirm_text Root partition filesystem type: ${rootfs_types[$((part_root_fstype - 1))]}\n"
@@ -106,11 +135,14 @@ disk_selection() {
     part_esp=""
     part_swap_exists=0
     part_swap=""
+    part_boot_exists=0
+    part_boot=""
     part_root=""
     part_root_fstype=1
     part_root_set_btrfs_label=0
     part_root_btrfs_label=""
     part_confirmtext=""
+    part_encryption_passwd=""
     disk_selection
   else
     part_confirmtext=$confirm_text
@@ -150,9 +182,14 @@ mirror_selection() {
   # Check if reflector has selected mirrors
   mirrorlist_linecount=$(cat /etc/pacman.d/mirrorlist | wc -l)
   if [[ $mirrorlist_linecount -gt 100 ]]; then
-    whiptail --nocancel --title "Mirrors" --yesno "Mirrors haven't been selected yet, do you want to generate a list that's not rated by speed? (or just wait for it)" 10 60
+    whiptail --nocancel --title "Mirrors" --yesno "Mirrors haven't been selected yet, do you want to generate a list now? (or just wait for it)" 10 60
     if [[ $? -eq 0 ]]; then
-      reflector --save /etc/pacman.d/mirrorlist --latest 20 --protocol https
+      whiptail --nocancel --title "Mirrors" --yesno "Do you want the mirrors to be sorted by speed? (takes more time)" 10 60
+      if [[ $? -eq 0 ]]; then
+        reflector --save /etc/pacman.d/mirrorlist --latest 20 --protocol https --sort rate
+      else
+        reflector --save /etc/pacman.d/mirrorlist --latest 20 --protocol https
+      fi
     else
       mirrorlist_wait=1
     fi
@@ -175,8 +212,34 @@ mirror_wait() {
 
 # Apply changes on the disks
 install_modify_disks() {
+  actual_root=""
+
+  echo "Checking for mounted partitions"
+  umount -l "$part_esp"
+  if [[ $part_boot_exists -eq 1 ]]; then umount -l "$part_boot"; fi
+  if [[ $part_swap_exists -eq 1 ]]; then umount -l "$part_swap"; fi
+  umount -l "$part_root"
+
+
+  if [[ $part_setup_encryption -eq 1 ]]; then
+    echo "Setting up encryption"
+    echo -e "YES\n$part_encryption_passwd\n$part_encryption_passwd" | cryptsetup luksFormat -v -s 512 -h sha512 "$part_root"
+
+    echo "Opening encrypted container"
+    echo "$part_encryption_passwd" | cryptsetup open "$part_root" root
+
+    actual_root="/dev/mapper/root"
+  else
+    actual_root="$part_root"
+  fi
+
   echo "Formatting EFI system partition"
   mkfs.fat -F 32 "$part_esp"
+
+  if [[ $part_boot_exists -eq 1 ]]; then
+    echo "Formatting boot partition to ext4"
+    mkfs.ext4 -F "$part_boot"
+  fi
 
   if [[ $part_swap_exists -eq 1 ]]; then
     echo "Making swap"
@@ -186,27 +249,33 @@ install_modify_disks() {
     swapon "$part_swap"
   fi
 
-  umount -l "$part_root"
   if [[ $part_root_fstype -eq 1 ]]; then
     echo "Formatting root partition to ext4"
-    mkfs.ext4 -F "$part_root"
+    mkfs.ext4 -F "$actual_root"
   elif [[ $part_root_fstype -eq 2 ]]; then
     echo "Formatting root partition to btrfs"
     if [[ $part_root_set_btrfs_label -eq 1 ]]; then
-      mkfs.btrfs -f -L "$part_root_btrfs_label" "$part_root"
+      mkfs.btrfs -f -L "$part_root_btrfs_label" "$actual_root"
     else
-      mkfs.btrfs -f "$part_root"
+      mkfs.btrfs -f "$actual_root"
     fi
   else
     echo "Formatting root partition to xfs"
-    mkfs.xfs -f "$part_root"
+    mkfs.xfs -f "$actual_root"
   fi
-}
 
-# Mounting root
-install_mount_root() {
+
+  # Mounting
   echo "Mounting root"
-  mount "$part_root" /mnt
+  mount "$actual_root" /mnt
+
+  if [[ $part_boot_exists -eq 1 ]]; then
+    echo "Mounting boot partition"
+    mount --mkdir "$part_boot" /mnt/boot
+  fi
+
+  echo "Mounting EFI system partition"
+  mount --mkdir "$part_esp" /mnt/boot/efi
 }
 
 # Enabling parallel downloads
@@ -256,7 +325,7 @@ post_install_action() {
   else
     curl -s https://raw.githubusercontent.com/bmhun/installer/main/postinstall.sh >> /mnt/var/post_installation.sh
     chmod +x /mnt/var/post_installation.sh
-    arch-chroot /mnt /var/post_installation.sh
+    arch-chroot /mnt /var/post_installation.sh "$part_esp"
     post_install_action
   fi
 }
@@ -275,7 +344,6 @@ mirror_wait
 
 # Pre install stuff
 install_modify_disks
-install_mount_root
 install_enable_parallel
 
 # The long awaited installation
